@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:munit-tools="http://www.mulesoft.org/schema/mule/munit-tools" xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/munit-tools http://www.mulesoft.org/schema/mule/munit-tools/current/mule-munit-tools.xsd">
+	<sub-flow name="munit-recorder-messagestore" doc:id="f49160af-2af9-43be-9106-639a813c4d6c" >
+		<munit-tools:spy doc:name="Spy on every messagestore-grpc:store-message" doc:id="fa00257b-3586-403c-b0be-912d9a8f94e8" processor="messagestore-grpc:store-message" >
+			<munit-tools:before-call >
+				<flow-ref doc:name="before call" doc:id="7dd89d63-913a-47f3-a726-2a8318ef6e33" name="munit-recorder-before-call" />
+			</munit-tools:before-call>
+			<munit-tools:after-call >
+				<set-variable value="MESSAGESTORE" doc:name="recordedComponent = MESSAGESTORE" doc:id="0ea04653-43ca-482b-8712-b7ab20cb335c" variableName="recordedComponent" />
+				<flow-ref doc:name="after call" doc:id="303fa7f9-c00d-4c8e-964f-b6da8cf0b10b" name="munit-recorder-after-call" />
+			</munit-tools:after-call>
+		</munit-tools:spy>
+	</sub-flow>
+	<flow name="mock-on-messageStore" doc:id="48b9394a-1b7d-46a8-a5d5-00f47f7c41db" >
+		<set-variable value="MESSAGESTORE" doc:name="recordedComponent = DBSELECT" doc:id="5dce17bf-1034-4d4c-b35a-0857032ece66" variableName="recordedComponent" />
+		<flow-ref doc:name="mock-component" doc:id="534916d6-d162-4a88-83a8-1cab36aab9e6" name="munit-recorder-mock-component" />
+	</flow>
+</mule>

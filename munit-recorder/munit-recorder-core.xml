@@ -1,0 +1,145 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:validation="http://www.mulesoft.org/schema/mule/validation" xmlns:munit-tools="http://www.mulesoft.org/schema/mule/munit-tools"
+	xmlns:compression="http://www.mulesoft.org/schema/mule/compression"
+	xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:file="http://www.mulesoft.org/schema/mule/file" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/file http://www.mulesoft.org/schema/mule/file/current/mule-file.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/compression http://www.mulesoft.org/schema/mule/compression/current/mule-compression.xsd
+http://www.mulesoft.org/schema/mule/munit-tools http://www.mulesoft.org/schema/mule/munit-tools/current/mule-munit-tools.xsd
+http://www.mulesoft.org/schema/mule/validation http://www.mulesoft.org/schema/mule/validation/current/mule-validation.xsd">
+	<file:config doc:id="a9fda417-c22b-4d2a-b7a9-ea51d0bb9bc9" doc:name="File Config" name="test_data">
+		<file:connection workingDir="src/test/resources/test_data/"/>
+	</file:config>
+	<sub-flow name="munit-recorder-mock-component" doc:id="56c6618c-3c1a-4810-9e95-77a2cc691ea2" >
+		<set-variable value='#[payload - "secrets"]' doc:name="set requestParams from payload" doc:id="2246ffcc-32c5-4bed-a4eb-a543dc029a8b" variableName="requestParams" />
+		<set-payload value='#[output java --- readUrl("classpath://test_data/" ++ vars.testName ++ "/" ++ vars.recordedComponent ++ ".json", "application/json")]' doc:name="read payload from file" doc:id="48287070-948e-4b83-b99e-b12ea9014f30" />
+		<ee:transform doc:name="set mockResponse var" doc:id="121202ab-9850-4457-8ec1-e29370e029ee" >
+			<ee:message >
+			</ee:message>
+			<ee:variables >
+				<ee:set-variable variableName="mockResponse" ><![CDATA[import firstWith from dw::core::Arrays
+output java
+---
+(payload firstWith ($.requestParams == vars.requestParams)).response]]></ee:set-variable>
+			</ee:variables>
+		</ee:transform>
+		<validation:is-not-null doc:name="Is not null" doc:id="dda92feb-c88e-4a07-86fb-d68adfcdbc10" message="#[&quot;No matching result found for these params in the test data! It's either not implemented or there is a dynamic variable like a date.\nrequestParams:\n&quot; ++ write(vars.requestParams,'application/json')]" value="#[payload]" />
+		<choice doc:name="Choice" doc:id="94dfe396-bb9a-4b0a-80c0-cbffee375b8a" >
+			<when expression='#[// gzip&#10;vars.mockResponse.compression == "gzip"]' >
+				<compression:compress doc:name="compress gzip" doc:id="21f9a918-0716-45e6-81e9-26ecaf83dde1" >
+					<compression:content ><![CDATA[#[vars.mockResponse.payload]]]></compression:content>
+					<compression:compressor >
+						<compression:gzip-compressor />
+					</compression:compressor>
+				</compression:compress>
+			</when>
+			<when expression='#[// zip&#10;vars.mockResponse.compression == "zip"]'>
+				<compression:compress doc:name="compress zip" doc:id="baffc372-8b26-457b-969b-33a7368f877e" >
+					<compression:content ><![CDATA[#[vars.mockResponse.payload]]]></compression:content>
+					<compression:compressor >
+						<compression:zip-compressor />
+					</compression:compressor>
+				</compression:compress>
+			</when>
+			<otherwise >
+				<set-payload value="#[vars.mockResponse.payload]" doc:name="Set Payload" doc:id="0575a07c-c238-4637-8099-06885e7c0fe1" />
+			</otherwise>
+		</choice>
+		<ee:transform doc:name="set attributes" doc:id="54098e77-5771-44e6-b4d7-0d7e697ea181">
+			<ee:message>
+				<ee:set-attributes><![CDATA[output java
+---
+vars.mockResponse.attributes]]></ee:set-attributes>
+			</ee:message>
+		</ee:transform>
+		<remove-variable doc:name="Remove mockResponse var" doc:id="d976d4cb-9c72-4329-99a4-461b29f98b49" variableName="mockResponse"/>
+		<remove-variable doc:name="Remove requestParams" doc:id="d874e72e-e1b4-4758-8418-a4141169827e" variableName="requestParams" />
+	</sub-flow>
+	<sub-flow name="munit-recorder-after-call" doc:id="9b5625db-4f25-4af9-99fc-4099a5ef7a50" >
+		<munit-tools:retrieve doc:name="Retrieve payloadBeforeCall" doc:id="5cc595f0-7822-45e6-94c5-7dde59f25fe2" key="payloadBeforeCall" target="payloadBeforeCall" />
+		<munit-tools:retrieve doc:name="Retrieve callParams" doc:id="8a4127d0-8671-45c9-af66-cf35a9a449c6" key="callParams" target="callParams" />
+		<munit-tools:clear-stored-data doc:name="Clear stored data" doc:id="d33e779a-a7ef-44c8-be54-9844cfe890b3" />
+		<choice doc:name="Choice" doc:id="ff1f7311-5a84-401c-b486-194f9bbbe62b" >
+			<when expression='#[// application/gzip&#10;typeOf(payload)~="application/gzip"]'>
+				<compression:decompress doc:name="Decompress GZIP" doc:id="fc31191f-efb4-41f8-a179-f651272c5a6c">
+				<compression:decompressor>
+					<compression:gzip-decompressor />
+				</compression:decompressor>
+			</compression:decompress>
+				<set-variable value='#["gzip"]' doc:name="compression = gzip" doc:id="e9ccb7d1-276c-46df-925c-4204ed1d0726" variableName="compression" />
+			</when>
+			<when expression='#[//Binary&#10;typeOf(payload) ~= "Binary"]'>
+				<compression:decompress doc:name="Decompress ZIP" doc:id="a7008030-b367-4431-8476-66851d3d5e6e" >
+					<compression:decompressor >
+						<compression:zip-decompressor />
+					</compression:decompressor>
+				</compression:decompress>
+				<set-variable value='#["zip"]' doc:name="compression = zip" doc:id="99f32552-6d30-4347-8e59-7cef56901bbd" variableName="compression" />
+			</when>
+			<otherwise >
+				<set-variable value='#[null]' doc:name="compression = null" doc:id="54e48b3d-d30a-4a1f-a63f-e0a9cf52b6a1" variableName="compression" />
+			</otherwise>
+		</choice>
+		<ee:transform doc:name="combine into testData" doc:id="706970b6-bed9-412a-85ba-4eaff5a32221" >
+			<ee:message />
+			<ee:variables >
+				<ee:set-variable variableName="testData" ><![CDATA[%dw 2.0
+output application/java
+---
+{
+	requestParams: vars.callParams,
+	response: {
+		payload: (if (payload != vars.payloadBeforeCall) payload else null),
+		attributes: attributes,
+		compression: vars.compression default null
+	}
+}]]></ee:set-variable>
+			</ee:variables>
+		</ee:transform>
+		<set-variable value='#[vars.testName ++ "/" ++ vars.recordedComponent ++ ".json"]' doc:name="filePath" doc:id="69fce205-3a4a-4787-a4c3-1edffb90d4e3" variableName="filePath" />
+		<try doc:name="Try1" doc:id="b59c7c97-83a1-4cd0-9997-72dfb1bd564d" >
+			<file:read doc:name="Read" doc:id="48354f7c-8c5e-49fd-8e4f-31f1d0888c1e" path='#[vars.testName ++ "/" ++ vars.recordedComponent ++ ".json"]' config-ref="test_data"/>
+			<ee:transform doc:name="Transform Message" doc:id="f0622ce1-48d6-439e-93ef-ec3825a40c61" >
+				<ee:message >
+					<ee:set-payload ><![CDATA[// this DW sees if our new testData already exists in the pre-existing testData by comparing requestParams
+// it either appends the new testData or overrides the previous copy
+import firstWith from dw::core::Arrays
+output json skipNullOn="everywhere"
+var preExistingEntry = payload firstWith ($.requestParams == vars.testData.requestParams)
+---
+if (isEmpty(preExistingEntry)) payload << vars.testData else 
+	payload map ((item) -> 
+		if (item.requestParams == vars.testData.requestParams) vars.testData else item
+	)]]></ee:set-payload>
+				</ee:message>
+			</ee:transform>
+			<error-handler >
+				<on-error-continue enableNotifications="true" logException="true" doc:name="On Error Continue" doc:id="805decca-2d20-464d-9de7-d7b832fe494d" >
+					<set-payload value="#[[vars.testData]]" doc:name="Set testData as Payload" doc:id="3f9e833a-a3c2-40e1-ba2e-461e60d51a19" />
+				</on-error-continue>
+			</error-handler>
+		</try>
+		<file:write doc:name="save testData" doc:id="b19dbfb9-cceb-420f-b6d7-c40be40602de" path="#[vars.filePath]" config-ref="test_data">
+			<file:content ><![CDATA[#[output json --- payload]]]></file:content>
+		</file:write>
+	</sub-flow>
+	<sub-flow name="munit-recorder-before-call" doc:id="341202c5-b638-45c6-aa78-458edb8b18ed" >
+		<validation:is-not-null doc:name="testName" doc:id="f2018380-5387-4cd9-836d-74e9d3c1705a" value="#[vars.testName]" message='#["vars.testName may not be empty when recording"]' />
+		<munit-tools:store doc:name="Store callParams" doc:id="5933399b-04d7-4d1a-a42f-d6c0b476752d" key="callParams" >
+			<munit-tools:value ><![CDATA[#[output java 
+fun ignoreSecrets(obj) = obj - "secrets"
+---
+ignoreSecrets(vars.params default payload)]]]></munit-tools:value>
+		</munit-tools:store>
+		<munit-tools:store doc:name="Store payloadBeforeCall" doc:id="8b7c73b2-e2b6-4a80-b962-4feb5b62c0fe" key="payloadBeforeCall" >
+			<munit-tools:value ><![CDATA[#[output java --- (payload - "secrets")]]]></munit-tools:value>
+		</munit-tools:store>
+		<logger level="INFO" doc:name="we could find a set variable by comparing vars before and afterwards" doc:id="60320a6e-2825-496a-a17f-81ada9d5efcc" message="after recorder before call" />
+	</sub-flow>
+	<sub-flow name="munit-recorder-assert-output" doc:id="bf92caf2-59dc-45af-b64b-291dee4438b5" >
+		<set-variable value='#[output java --- readUrl("classpath://test_data/" ++ vars.testName ++ "/output.json", "application/json")]' doc:name="Set expectedOutput" doc:id="a6f3738f-e115-4046-a43f-19525c0c8e77" variableName="expectedOutput"/>
+		<set-variable value='#[output java --- readUrl("classpath://test_data/" ++ vars.testName ++ "/output.json", "application/json")]' doc:name="read payload from file" doc:id="8dfbc720-4a6d-4fb7-a574-280b96e51a4d" variableName="payload" />
+		<munit-tools:assert-equals doc:name="Assert expected payload" doc:id="91761830-51d9-4f59-a438-5399207ea8bd" actual="#[output java --- payload]" expected="#[output java --- vars.expectedOutput.payload]" message="Unexpected payload!" />
+	</sub-flow>
+</mule>

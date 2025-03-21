@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:compression="http://www.mulesoft.org/schema/mule/compression"
+	xmlns:file="http://www.mulesoft.org/schema/mule/file"
+	xmlns:munit-tools="http://www.mulesoft.org/schema/mule/munit-tools" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/munit-tools http://www.mulesoft.org/schema/mule/munit-tools/current/mule-munit-tools.xsd
+http://www.mulesoft.org/schema/mule/file http://www.mulesoft.org/schema/mule/file/current/mule-file.xsd
+http://www.mulesoft.org/schema/mule/compression http://www.mulesoft.org/schema/mule/compression/current/mule-compression.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+	<sub-flow name="replay" doc:id="6cf5c860-0ff3-4184-9807-ded28c25be49">
+		<munit-tools:mock-when doc:name="Mock when HTTP" doc:id="7f82c0fb-e9b6-4050-afdb-281a7b216b0e" processor="http:request">
+			
+			<munit-tools:then-call flow="mock-on-http" />
+		</munit-tools:mock-when>
+		<munit-tools:mock-when doc:name="Mock when db:select" doc:id="265c461e-7c53-4ed9-8df0-782d74005d2a" processor="db:query-single">
+			
+			<munit-tools:then-call flow="mock-on-dbselect" />
+		</munit-tools:mock-when>
+		<munit-tools:mock-when doc:name="Mock when db:insert" doc:id="9ff2e978-8264-4e88-8dd9-84bc16658360" processor="db:insert" >
+			
+			<munit-tools:then-call flow="mock-on-db-insert" />
+		</munit-tools:mock-when>
+		<munit-tools:mock-when doc:name="Mock when messagestore-grpc:store-message" doc:id="c6e1ced0-b54d-4af4-b899-ffea2533f189" processor="messagestore-grpc:store-message" >
+			
+			<munit-tools:then-call flow="mock-on-messageStore" />
+		</munit-tools:mock-when>
+	</sub-flow>
+	<sub-flow name="record" doc:id="e5616925-ce42-48a1-9d55-0ee35b47462b" >
+		<flow-ref doc:name="OUTPUT" doc:id="5ea7a6b0-ba35-4554-b23a-6cdc59222e9f" name="munit-recorder-output" />
+		<flow-ref doc:name="HTTP" doc:id="8e27399b-c876-498e-b725-74abc2fcc65c" name="munit-recorder-http"/>
+		<flow-ref doc:name="DB SELECT" doc:id="c9f05458-6460-43fb-9ef6-aa0badde56f7" name="munit-recorder-db-select" />
+		<flow-ref doc:name="DB INSERT" doc:id="8989716c-2613-4435-a7ef-f7053b1d04d8" name="munit-recorder-db-insert"/>
+		<flow-ref doc:name="MESSAGESTORE" doc:id="0db21695-6dab-457a-81cd-956c268a713e" name="munit-recorder-messagestore" />
+	</sub-flow>
+	<sub-flow name="verify" doc:id="48e63f8c-44c0-4f1a-a117-69f2dd925d83" >
+		<flow-ref doc:name="DB INSERT" doc:id="c48466bd-e520-4f81-98a2-7411c8918b2d" name="munit-recorder-db-insert-verify"/>
+	</sub-flow>
+	<sub-flow name="munit-recorder-output" doc:id="b6b9a443-2828-4d79-b846-bf5f5dece127" >
+		<munit-tools:spy doc:name="spy on file:read to vars.expectedOutput" doc:id="107c5d2b-0fa2-4776-844f-236cbd014e2f" processor="file:read" >
+			<munit-tools:with-attributes >
+				<munit-tools:with-attribute whereValue="expectedOutput" attributeName="target" />
+			</munit-tools:with-attributes>
+			<munit-tools:before-call >
+				<file:write doc:name="save payload and attributes as output.json" doc:id="57f2e845-a0f7-43e9-a8f0-c95b9ae9b0e5" path='#[vars.testName ++ "/output.json"]' lock="true" >
+					<file:content ><![CDATA[#[output json --- {payload: payload, attributes: attributes}]]]></file:content>
+				</file:write>
+			</munit-tools:before-call>
+		</munit-tools:spy>
+	</sub-flow>
+</mule>

@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:munit-tools="http://www.mulesoft.org/schema/mule/munit-tools" xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/munit-tools http://www.mulesoft.org/schema/mule/munit-tools/current/mule-munit-tools.xsd">
+	<sub-flow name="munit-recorder-sftp-write-set-filename" doc:id="2746814e-0462-435c-a59d-2ef423e47982">
+		<set-variable value="SFTP-WRITE" doc:name="SFTP-WRITE" doc:id="cbfa2d87-0d48-4a31-8c13-8ffb46f302db" variableName="testDataFileName" />
+	</sub-flow>
+	<sub-flow name="munit-recorder-sftp-write" doc:id="f49160af-2af9-43be-9106-639a813c4d6c" >
+		<munit-tools:spy doc:name="Spy on every sftp:write" doc:id="7f1127c8-0b48-4fe5-a976-03bd14c178b1" processor="sftp:write" >
+			<munit-tools:before-call >
+				<flow-ref doc:name="before call" doc:id="cc9ac212-38a0-44c4-9f33-85c89264991e" name="munit-recorder-before-call" />
+				<flow-ref doc:name="set filename" doc:id="94463c82-7982-4920-951e-4bac874db946" name="munit-recorder-sftp-write-set-filename" />
+				<flow-ref doc:name="after call" doc:id="8959898d-427d-4cf3-94ef-5bbf98352249" name="munit-recorder-after-call" />
+			</munit-tools:before-call>
+		</munit-tools:spy>
+	</sub-flow>
+	<sub-flow name="munit-recorder-sftp-write-verify" doc:id="e0fb1753-1cdc-4ffd-b772-ba7ee342cc3b" >
+		<flow-ref doc:name="set filename" doc:id="4060d529-5aca-417a-b9c8-76d7e623f001" name="munit-recorder-sftp-write-set-filename" />
+		<set-variable value='#[// try to read the test file, if it doesnt exist, return empty array&#10;output java &#10;import try, orElse from dw::Runtime&#10;---&#10;try(() -&gt; (readUrl("classpath://test_data/" ++ vars.testName ++ "/" ++ vars.testDataFileName ++ ".json", "application/json"))) orElse []]' doc:name="testData" doc:id="aad2e25b-5c14-4f3a-a257-4f0cb405d613" variableName="testData"/>
+		<munit-tools:verify-call doc:name="Verify call = size of testData" doc:id="8ae2c96f-a8f2-461b-a7a3-cca5c59720b1" processor="sftp:write" times="#[sizeOf(vars.testData)]"/>
+		<remove-variable doc:name="Remove Variable" doc:id="82443b3b-2323-4059-973c-90c3cfb43c6f" variableName="testData"/>
+	</sub-flow>
+	<flow name="mock-on-sftp-write" doc:id="2e73f6f6-07d9-4403-869e-0ab35ab8d256" >
+		<flow-ref doc:name="set filename" doc:id="a53a31ce-55cf-41b0-98ec-8d66d382c57b" name="munit-recorder-sftp-write-set-filename" />
+		<flow-ref doc:name="mock-component" doc:id="25481062-eaa4-463b-8f6d-4f78df70c626" name="munit-recorder-mock-component" />
+	</flow>
+</mule>

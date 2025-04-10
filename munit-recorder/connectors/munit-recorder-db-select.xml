@@ -5,18 +5,18 @@
 	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
 http://www.mulesoft.org/schema/mule/munit-tools http://www.mulesoft.org/schema/mule/munit-tools/current/mule-munit-tools.xsd">
 	<sub-flow name="munit-recorder-db-select" doc:id="48540a14-de8e-4cec-aeb4-728bb8388ff7" >
-		<munit-tools:spy doc:name="Spy on every db:select" doc:id="dbd733a5-38d7-4e78-af1c-33e3d28de771" processor="db:query-single" >
+		<munit-tools:spy doc:name="Spy on every db:select" doc:id="dbd733a5-38d7-4e78-af1c-33e3d28de771" processor="db:select" >
 			<munit-tools:before-call >
 				<flow-ref doc:name="before call" doc:id="326186f3-839b-4968-9996-bf8682175ead" name="munit-recorder-before-call" />
 			</munit-tools:before-call>
 			<munit-tools:after-call >
-				<set-variable value="DBSELECT" doc:name="recordedComponent = HTTP" doc:id="70fe34b0-39ad-4a1e-b2b2-1de474e01fb0" variableName="recordedComponent" />
+				<set-variable value="DBSELECT" doc:name="testDataFileName = DBSELECT" doc:id="70fe34b0-39ad-4a1e-b2b2-1de474e01fb0" variableName="testDataFileName" />
 				<flow-ref doc:name="after call" doc:id="c48fa1c9-34a0-481e-9f93-c3a6cb14658e" name="munit-recorder-after-call" />
 			</munit-tools:after-call>
 		</munit-tools:spy>
 	</sub-flow>
 	<flow name="mock-on-dbselect" doc:id="0df2b18e-85b6-45c3-8cb8-1dd12e4f4c49" >
-		<set-variable value="DBSELECT" doc:name="recordedComponent = DBSELECT" doc:id="ed5fb583-8b85-4085-b05f-d4c431fb33b2" variableName="recordedComponent" />
+		<set-variable value="DBSELECT" doc:name="testDataFileName = DBSELECT" doc:id="ed5fb583-8b85-4085-b05f-d4c431fb33b2" variableName="testDataFileName" />
 		<flow-ref doc:name="mock-component" doc:id="47c54cc6-3d98-41f0-8ae5-82977f521155" name="munit-recorder-mock-component" />
 	</flow>
 </mule>

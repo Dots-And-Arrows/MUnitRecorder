@@ -11,9 +11,12 @@ http://www.mulesoft.org/schema/mule/validation http://www.mulesoft.org/schema/mu
 	<file:config doc:id="a9fda417-c22b-4d2a-b7a9-ea51d0bb9bc9" doc:name="File Config" name="test_data">
 		<file:connection workingDir="src/test/resources/test_data/"/>
 	</file:config>
+		<file:config doc:id="56c6618c-3c1a-4810-9e95-77a2cc691ea2" doc:name="File Config" name="test">
+		<file:connection workingDir='#["src/test/resources/test_data/" ++ vars.testName]'/>
+	</file:config>
 	<sub-flow name="munit-recorder-mock-component" doc:id="56c6618c-3c1a-4810-9e95-77a2cc691ea2" >
 		<set-variable value='#[payload - "secrets"]' doc:name="set requestParams from payload" doc:id="2246ffcc-32c5-4bed-a4eb-a543dc029a8b" variableName="requestParams" />
-		<set-payload value='#[output java --- readUrl("classpath://test_data/" ++ vars.testName ++ "/" ++ vars.recordedComponent ++ ".json", "application/json")]' doc:name="read payload from file" doc:id="48287070-948e-4b83-b99e-b12ea9014f30" />
+		<set-payload value='#[output java --- readUrl("classpath://test_data/" ++ vars.testName ++ "/" ++ vars.testDataFileName ++ ".json", "application/json")]' doc:name="read payload from file" doc:id="48287070-948e-4b83-b99e-b12ea9014f30" />
 		<ee:transform doc:name="set mockResponse var" doc:id="121202ab-9850-4457-8ec1-e29370e029ee" >
 			<ee:message >
 			</ee:message>
@@ -24,7 +27,7 @@ output java
 (payload firstWith ($.requestParams == vars.requestParams)).response]]></ee:set-variable>
 			</ee:variables>
 		</ee:transform>
-		<validation:is-not-null doc:name="Is not null" doc:id="dda92feb-c88e-4a07-86fb-d68adfcdbc10" message="#[&quot;No matching result found for these params in the test data! It's either not implemented or there is a dynamic variable like a date.\nrequestParams:\n&quot; ++ write(vars.requestParams,'application/json')]" value="#[payload]" />
+		<validation:is-not-null doc:name="Is not null" doc:id="dda92feb-c88e-4a07-86fb-d68adfcdbc10" message="#[&quot;No matching result found for these params in the test data! It's either not implemented or there is a dynamic variable like a date.\nrequestParams:\n&quot; ++ write(vars.requestParams,'application/json')]" value="#[vars.mockResponse]" />
 		<choice doc:name="Choice" doc:id="94dfe396-bb9a-4b0a-80c0-cbffee375b8a" >
 			<when expression='#[// gzip&#10;vars.mockResponse.compression == "gzip"]' >
 				<compression:compress doc:name="compress gzip" doc:id="21f9a918-0716-45e6-81e9-26ecaf83dde1" >
@@ -57,6 +60,7 @@ vars.mockResponse.attributes]]></ee:set-attributes>
 		<remove-variable doc:name="Remove requestParams" doc:id="d874e72e-e1b4-4758-8418-a4141169827e" variableName="requestParams" />
 	</sub-flow>
 	<sub-flow name="munit-recorder-after-call" doc:id="9b5625db-4f25-4af9-99fc-4099a5ef7a50" >
+		<validation:is-not-null doc:name="testDataFileName Is not null" doc:id="10a06dbd-60bd-428e-8e9a-d7d6adb9ff19" value="#[vars.testDataFileName]" message='#["Mandatory variable testDataFileName not set when calling " ++ flow.name]' />
 		<munit-tools:retrieve doc:name="Retrieve payloadBeforeCall" doc:id="5cc595f0-7822-45e6-94c5-7dde59f25fe2" key="payloadBeforeCall" target="payloadBeforeCall" />
 		<munit-tools:retrieve doc:name="Retrieve callParams" doc:id="8a4127d0-8671-45c9-af66-cf35a9a449c6" key="callParams" target="callParams" />
 		<munit-tools:clear-stored-data doc:name="Clear stored data" doc:id="d33e779a-a7ef-44c8-be54-9844cfe890b3" />
@@ -97,9 +101,9 @@ output application/java
 }]]></ee:set-variable>
 			</ee:variables>
 		</ee:transform>
-		<set-variable value='#[vars.testName ++ "/" ++ vars.recordedComponent ++ ".json"]' doc:name="filePath" doc:id="69fce205-3a4a-4787-a4c3-1edffb90d4e3" variableName="filePath" />
+		<set-variable value='#[vars.testName ++ "/" ++ vars.testDataFileName ++ ".json"]' doc:name="filePath" doc:id="69fce205-3a4a-4787-a4c3-1edffb90d4e3" variableName="filePath" />
 		<try doc:name="Try1" doc:id="b59c7c97-83a1-4cd0-9997-72dfb1bd564d" >
-			<file:read doc:name="Read" doc:id="48354f7c-8c5e-49fd-8e4f-31f1d0888c1e" path='#[vars.testName ++ "/" ++ vars.recordedComponent ++ ".json"]' config-ref="test_data"/>
+			<file:read doc:name="Read" doc:id="48354f7c-8c5e-49fd-8e4f-31f1d0888c1e" path='#[vars.testName ++ "/" ++ vars.testDataFileName ++ ".json"]' config-ref="test_data"/>
 			<ee:transform doc:name="Transform Message" doc:id="f0622ce1-48d6-439e-93ef-ec3825a40c61" >
 				<ee:message >
 					<ee:set-payload ><![CDATA[// this DW sees if our new testData already exists in the pre-existing testData by comparing requestParams
@@ -128,18 +132,25 @@ if (isEmpty(preExistingEntry)) payload << vars.testData else
 		<validation:is-not-null doc:name="testName" doc:id="f2018380-5387-4cd9-836d-74e9d3c1705a" value="#[vars.testName]" message='#["vars.testName may not be empty when recording"]' />
 		<munit-tools:store doc:name="Store callParams" doc:id="5933399b-04d7-4d1a-a42f-d6c0b476752d" key="callParams" >
 			<munit-tools:value ><![CDATA[#[output java 
-fun ignoreSecrets(obj) = obj - "secrets"
+fun ignoreSecrets(incoming) = if (typeOf(incoming) ~= "Object") incoming - "secrets" else incoming
 ---
 ignoreSecrets(vars.params default payload)]]]></munit-tools:value>
 		</munit-tools:store>
 		<munit-tools:store doc:name="Store payloadBeforeCall" doc:id="8b7c73b2-e2b6-4a80-b962-4feb5b62c0fe" key="payloadBeforeCall" >
-			<munit-tools:value ><![CDATA[#[output java --- (payload - "secrets")]]]></munit-tools:value>
+			<munit-tools:value ><![CDATA[#[output java 
+fun ignoreSecrets(incoming) = if (typeOf(incoming) ~= "Object") incoming - "secrets" else incoming
+---
+ignoreSecrets(payload)]]]></munit-tools:value>
 		</munit-tools:store>
 		<logger level="INFO" doc:name="we could find a set variable by comparing vars before and afterwards" doc:id="60320a6e-2825-496a-a17f-81ada9d5efcc" message="after recorder before call" />
 	</sub-flow>
 	<sub-flow name="munit-recorder-assert-output" doc:id="bf92caf2-59dc-45af-b64b-291dee4438b5" >
-		<set-variable value='#[output java --- readUrl("classpath://test_data/" ++ vars.testName ++ "/output.json", "application/json")]' doc:name="Set expectedOutput" doc:id="a6f3738f-e115-4046-a43f-19525c0c8e77" variableName="expectedOutput"/>
-		<set-variable value='#[output java --- readUrl("classpath://test_data/" ++ vars.testName ++ "/output.json", "application/json")]' doc:name="read payload from file" doc:id="8dfbc720-4a6d-4fb7-a574-280b96e51a4d" variableName="payload" />
-		<munit-tools:assert-equals doc:name="Assert expected payload" doc:id="91761830-51d9-4f59-a438-5399207ea8bd" actual="#[output java --- payload]" expected="#[output java --- vars.expectedOutput.payload]" message="Unexpected payload!" />
+		<set-variable value='#[output java --- readUrl("classpath://test_data/" ++ vars.testName ++ "/output.json", "application/json")]' doc:name="Set expectedOutput" doc:id="a6f3738f-e115-4046-a43f-19525c0c8e77" variableName="expectedPayload"/>
+		<munit-tools:assert-equals doc:name="Assert expected payload" doc:id="91761830-51d9-4f59-a438-5399207ea8bd" actual="#[output java --- payload]" expected="#[output java --- vars.expectedPayload]" message="Unexpected payload!" />
+	</sub-flow>
+	<sub-flow name="munit-recorder-record-output" doc:id="629aade2-4227-4db6-bb53-6e29158e4706" >
+		<file:write doc:name="save testData" doc:id="4013715f-5736-4a0a-80ed-616d44bc9561" config-ref="test_data" path='#[vars.testName ++ "/output.json"]' >
+			<file:content ><![CDATA[#[output json --- payload]]]></file:content>
+		</file:write>
 	</sub-flow>
 </mule>

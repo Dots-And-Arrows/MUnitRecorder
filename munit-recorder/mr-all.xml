@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:compression="http://www.mulesoft.org/schema/mule/compression"
+	xmlns:file="http://www.mulesoft.org/schema/mule/file"
+	xmlns:munit-tools="http://www.mulesoft.org/schema/mule/munit-tools" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/munit-tools http://www.mulesoft.org/schema/mule/munit-tools/current/mule-munit-tools.xsd
+http://www.mulesoft.org/schema/mule/file http://www.mulesoft.org/schema/mule/file/current/mule-file.xsd
+http://www.mulesoft.org/schema/mule/compression http://www.mulesoft.org/schema/mule/compression/current/mule-compression.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+	<sub-flow name="mr-mock-all" doc:id="6cf5c860-0ff3-4184-9807-ded28c25be49">
+		<munit-tools:mock-when doc:name="mock db:select" doc:id="265c461e-7c53-4ed9-8df0-782d74005d2a" processor="db:select">
+			<munit-tools:then-call flow="mr-mock-db:select" />
+		</munit-tools:mock-when>
+	</sub-flow>
+	<sub-flow name="record all" doc:id="e5616925-ce42-48a1-9d55-0ee35b47462b" >
+		<flow-ref doc:name="record db:select" doc:id="c9f05458-6460-43fb-9ef6-aa0badde56f7" name="mr-record-db:select" />
+	</sub-flow>
+	<sub-flow name="verify all" doc:id="48e63f8c-44c0-4f1a-a117-69f2dd925d83" >
+		<flow-ref doc:name="verify db:select" doc:id="c48466bd-e520-4f81-98a2-7411c8918b2d" name="mr-verify-db:select"/>
+	</sub-flow>
+</mule>

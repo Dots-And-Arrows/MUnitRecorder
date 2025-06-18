@@ -24,7 +24,7 @@ http://www.mulesoft.org/schema/mule/validation http://www.mulesoft.org/schema/mu
 				<ee:set-variable variableName="mockResponse" ><![CDATA[import firstWith from dw::core::Arrays
 output java
 ---
-(payload firstWith ($.requestParams == vars.requestParams)).response]]></ee:set-variable>
+(payload firstWith ($.requestParams ~= vars.requestParams)).response]]></ee:set-variable>
 			</ee:variables>
 		</ee:transform>
 		<validation:is-not-null doc:name="Is not null" doc:id="dda92feb-c88e-4a07-86fb-d68adfcdbc10" message="#[&quot;No matching result found for these params in the test data! It's either not implemented or there is a dynamic variable like a date.\nrequestParams:\n&quot; ++ write(vars.requestParams,'application/json')]" value="#[vars.mockResponse]" />
@@ -65,7 +65,7 @@ vars.mockResponse.attributes]]></ee:set-attributes>
 		<munit-tools:retrieve doc:name="Retrieve callParams" doc:id="8a4127d0-8671-45c9-af66-cf35a9a449c6" key="callParams" target="callParams" />
 		<munit-tools:clear-stored-data doc:name="Clear stored data" doc:id="d33e779a-a7ef-44c8-be54-9844cfe890b3" />
 		<choice doc:name="Choice" doc:id="ff1f7311-5a84-401c-b486-194f9bbbe62b" >
-			<when expression='#[// application/gzip&#10;typeOf(payload)~="application/gzip"]'>
+			<when expression="#[// application/gzip&#10;output java --- attributes.headers.'content-encoding' == &quot;gzip&quot; or typeOf(payload)~=&quot;application/gzip&quot;]">
 				<compression:decompress doc:name="Decompress GZIP" doc:id="fc31191f-efb4-41f8-a179-f651272c5a6c">
 				<compression:decompressor>
 					<compression:gzip-decompressor />
@@ -73,7 +73,7 @@ vars.mockResponse.attributes]]></ee:set-attributes>
 			</compression:decompress>
 				<set-variable value='#["gzip"]' doc:name="compression = gzip" doc:id="e9ccb7d1-276c-46df-925c-4204ed1d0726" variableName="compression" />
 			</when>
-			<when expression='#[//Binary&#10;typeOf(payload) ~= "Binary"]'>
+			<when expression="#[//Binary&#10;output java --- attributes.headers.'content-encoding' == &quot;zip&quot; or typeOf(payload) ~= &quot;Binary&quot;]">
 				<compression:decompress doc:name="Decompress ZIP" doc:id="a7008030-b367-4431-8476-66851d3d5e6e" >
 					<compression:decompressor >
 						<compression:zip-decompressor />

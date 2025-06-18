@@ -23,8 +23,8 @@ http://www.mulesoft.org/schema/mule/munit-tools http://www.mulesoft.org/schema/m
 		<flow-ref doc:name="mock-component" doc:id="47c54cc6-3d98-41f0-8ae5-82977f521155" name="mr-mock-component" />
 	</flow>
 	<sub-flow name="mr-verify-db:select" doc:id="e0fb1753-1cdc-4ffd-b772-ba7ee342cc3b" >
-		<flow-ref doc:name="set filename" doc:id="4060d529-5aca-417a-b9c8-76d7e623f001" name="munit-recorder-db-insert-set-filename" />
-		<set-variable value='#[output java ---&#10; readUrl("classpath://test_data/" ++ vars.testName ++ "/" ++ vars.fileName ++ ".json", "application/json")]' doc:name="testData" doc:id="aad2e25b-5c14-4f3a-a257-4f0cb405d613" variableName="testData"/>
+		<flow-ref doc:name="set filename" doc:id="4060d529-5aca-417a-b9c8-76d7e623f001" name="mr-set-filename-db:select" />
+		<set-variable value='#[// try to read the test file, if it doesnt exist, return empty array&#10;output java &#10;import try, orElse from dw::Runtime&#10;---&#10;try(() -&gt; (readUrl("classpath://test_data/" ++ vars.testName ++ "/" ++ vars.testDataFileName ++ ".json", "application/json"))) orElse []]' doc:name="testData" doc:id="2b297b9e-a6dd-4794-98ab-2d9113a5a8b1" variableName="testData"/>
 		<munit-tools:verify-call doc:name="Verify call = size of testData" doc:id="8ae2c96f-a8f2-461b-a7a3-cca5c59720b1" processor="db:select" times="#[sizeOf(vars.testData)]"/>
 		<remove-variable doc:name="Remove Variable" doc:id="82443b3b-2323-4059-973c-90c3cfb43c6f" variableName="testData"/>
 	</sub-flow>

@@ -19,6 +19,13 @@ Or add this to pom.xml
     <version>2.0.6</version>
     <classifier>mule-plugin</classifier>
 </dependency>
+
+<dependency>
+    <groupId>org.mule.connectors</groupId>
+    <artifactId>mule-file-connector</artifactId>
+    <version>1.5.3</version>
+    <classifier>mule-plugin</classifier>
+</dependency>
 ```
 ## parts
 ### mr-core.xml

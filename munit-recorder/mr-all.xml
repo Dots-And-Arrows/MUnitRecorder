@@ -7,7 +7,17 @@ http://www.mulesoft.org/schema/mule/munit-tools http://www.mulesoft.org/schema/m
 http://www.mulesoft.org/schema/mule/file http://www.mulesoft.org/schema/mule/file/current/mule-file.xsd
 http://www.mulesoft.org/schema/mule/compression http://www.mulesoft.org/schema/mule/compression/current/mule-compression.xsd
 http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
-	<sub-flow name="mr-mock-all" doc:id="6cf5c860-0ff3-4184-9807-ded28c25be49">
+	<sub-flow name="mr-replay-all" doc:id="6cf5c860-0ff3-4184-9807-ded28c25be49">
+		<munit-tools:mock-when doc:id="8686a748-935e-4895-b895-2b69bc5d3ef8" doc:name="Mock timestamp  so the test doesnt fail because it's different" processor="set-variable">
+				<munit-tools:with-attributes>
+					<munit-tools:with-attribute attributeName="variableName" whereValue="timestamp" />
+				</munit-tools:with-attributes>
+			<munit-tools:then-return>
+				<munit-tools:variables>
+					<munit-tools:variable key="timestamp" value='#["2008-12-28T18:14:27.778482Z"]' />
+				</munit-tools:variables>
+			</munit-tools:then-return>
+			</munit-tools:mock-when>
 		<munit-tools:mock-when doc:name="mock db:select" doc:id="265c461e-7c53-4ed9-8df0-782d74005d2a" processor="db:select">
 			<munit-tools:then-call flow="mr-mock-db:select" />
 		</munit-tools:mock-when>
@@ -21,6 +31,22 @@ http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/
 		</munit-tools:mock-when>
 	</sub-flow>
 	<sub-flow name="mr-record-all" doc:id="e5616925-ce42-48a1-9d55-0ee35b47462b" >
+		<munit-tools:mock-when doc:name="Mock timestamp  so the test doesnt fail because it's different" doc:id="748e009b-edbd-4d93-8473-1305cb1d624b" processor="set-variable">
+			<munit-tools:with-attributes>
+				<munit-tools:with-attribute whereValue="timestamp" attributeName="variableName" />
+			</munit-tools:with-attributes>
+			<munit-tools:then-return>
+				<munit-tools:variables>
+					<munit-tools:variable key="timestamp" value='#["2008-12-28T18:14:27.778482Z"]' />
+				</munit-tools:variables>
+			</munit-tools:then-return>
+		</munit-tools:mock-when>
+		<munit-tools:mock-when doc:name="when validating payload, record it instead" doc:id="d061b71c-f8ee-462c-893b-bfbf2f613f6f" processor="flow-ref">
+			<munit-tools:with-attributes>
+				<munit-tools:with-attribute whereValue="mr-validate-payload" attributeName="name" />
+			</munit-tools:with-attributes>
+			<munit-tools:then-call flow="mr-record-output" />
+		</munit-tools:mock-when>
 		<flow-ref doc:name="record db:select" doc:id="c9f05458-6460-43fb-9ef6-aa0badde56f7" name="mr-record-db:select" />
 		<flow-ref doc:name="record http:request" doc:id="3ebdbbbf-7aeb-4df4-864e-c13710c061a4" name="mr-record-http:request" />
 		<flow-ref doc:name="record azure-storage:download-blob" doc:id="dedf3047-43b2-4edf-94ef-2e5b7d7cd9e8" name="mr-record-azure-storage:download-blob" />
@@ -31,4 +57,3 @@ http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/
 		<flow-ref doc:name="verify azure-storage:download-blob" doc:id="6cc94d34-01f4-4caa-a256-9433e9748ccd" name="mr-verify-azure-storage:download-blob" />
 	</sub-flow>
 </mule>
-

@@ -42,3 +42,7 @@ The main requirement of your project that the munit recorder has is that you set
 - replace the `record` component with a `replay` component
 - add a `verify` component at the end
 - done 
+
+## known issues
+- repeated identical calls can lead to a miscount on verify
+- detection of zipped files just detects binary and is thus flawed:

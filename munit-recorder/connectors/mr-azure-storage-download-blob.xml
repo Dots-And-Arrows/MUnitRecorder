@@ -5,13 +5,10 @@
 	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
 http://www.mulesoft.org/schema/mule/munit-tools http://www.mulesoft.org/schema/mule/munit-tools/current/mule-munit-tools.xsd">
 	<sub-flow name="mr-set-filename-azure-storage:download-blob" doc:id="2746814e-0462-435c-a59d-2ef423e47982">
-		<set-variable value="azure-storage:download-blob" doc:name="fileName = azure-storage:download-blob" doc:id="cbfa2d87-0d48-4a31-8c13-8ffb46f302db" variableName="fileName" />
+		<set-variable value="azure-storage:download-blob" doc:name="testDataFileName = azure-storage:download-blob" doc:id="cbfa2d87-0d48-4a31-8c13-8ffb46f302db" variableName="testDataFileName" />
 	</sub-flow>
 	<sub-flow name="mr-record-azure-storage:download-blob" doc:id="48540a14-de8e-4cec-aeb4-728bb8388ff7" >
 		<munit-tools:spy doc:name="spy-on-azure-storage:download-blob" doc:id="dbd733a5-38d7-4e78-af1c-33e3d28de771" processor="azure-storage:download-blob" >
-			<munit-tools:before-call >
-				<flow-ref doc:name="before call" doc:id="326186f3-839b-4968-9996-bf8682175ead" name="mr-before-call-save-params" />
-			</munit-tools:before-call>
 			<munit-tools:after-call >
 				<set-variable value="azure-storage:download-blob" doc:name="testDataFileName = azure-storage:download-blob" doc:id="70fe34b0-39ad-4a1e-b2b2-1de474e01fb0" variableName="testDataFileName" />
 				<flow-ref doc:name="after call" doc:id="c48fa1c9-34a0-481e-9f93-c3a6cb14658e" name="mr-after-call-save-params" />
@@ -24,7 +21,8 @@ http://www.mulesoft.org/schema/mule/munit-tools http://www.mulesoft.org/schema/m
 	</flow>
 	<sub-flow name="mr-verify-azure-storage:download-blob" doc:id="e0fb1753-1cdc-4ffd-b772-ba7ee342cc3b" >
 		<flow-ref doc:name="set filename" doc:id="4060d529-5aca-417a-b9c8-76d7e623f001" name="mr-set-filename-azure-storage:download-blob" />
-		<set-variable value='#[output java ---&#10; readUrl("classpath://test_data/" ++ (vars.testName default "unknown") ++ "/" ++ vars.fileName ++ ".json", "application/json")]' doc:name="testData" doc:id="aad2e25b-5c14-4f3a-a257-4f0cb405d613" variableName="testData"/>
+		<flow-ref doc:name="sanitize filename" doc:id="36939141-e4eb-40d5-885e-6c0e8791db9e" name="mr-core-sanitize-filename" />
+		<set-variable value='#[// try to read the test file, if it doesnt exist, return empty array&#10;output java &#10;import try, orElse from dw::Runtime&#10;---&#10;try(() -&gt; (readUrl("classpath://test_data/" ++ vars.testName ++ "/" ++ vars.testDataFileName ++ ".json", "application/json"))) orElse []]' doc:name="testData" doc:id="aad2e25b-5c14-4f3a-a257-4f0cb405d613" variableName="testData"/>
 		<munit-tools:verify-call doc:name="Verify call = size of testData" doc:id="8ae2c96f-a8f2-461b-a7a3-cca5c59720b1" processor="azure-storage:download-blob" times="#[sizeOf(vars.testData)]"/>
 		<remove-variable doc:name="Remove Variable" doc:id="82443b3b-2323-4059-973c-90c3cfb43c6f" variableName="testData"/>
 	</sub-flow>

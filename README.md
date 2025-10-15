@@ -38,7 +38,7 @@ In here are individual XML files that represent all the flows needed to mock a s
 To make a new one, copy the one from templates, replace TAG with your new tag, example db:select, and move the components in the move-me subflow to mr-all.xml
 
 ## design requirements
-The main requirement of your project that the munit recorder has is that you set all parameters relevant to an outbound connector (host, path, etc) in the payload or in vars.requestParams right before the connector component is triggered. This variable will be used to save the outbound parameters as well as fetch the mock payload during replay. Same outbound params means same payload, unkown outbound params will result in a test failure.
+The main requirement of your project that the munit recorder has is that you set all parameters relevant to an outbound connector (host, path, etc) a variable named vars.requestParams right before the connector component is triggered. This variable will be used to save the outbound parameters as well as fetch the mock payload during replay. Same outbound params means same payload, unkown outbound params will result in a test failure.
 
 ## usage
 - set up a munit test to be able to connect to your testing environment
